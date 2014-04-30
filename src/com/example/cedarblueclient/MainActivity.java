@@ -26,6 +26,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.annotation.SuppressLint;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -43,8 +44,8 @@ import android.os.Build;
 @SuppressLint("NewApi") public class MainActivity extends ActionBarActivity implements
 		View.OnClickListener {
 	public Button submitButton;
-	public EditText topicEditText;
-	public EditText messageEditText;
+	public static EditText topicEditText;
+	public static EditText messageEditText;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -77,10 +78,16 @@ import android.os.Build;
 	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
-		String topicString = topicEditText.getText().toString();
-		String messageString = messageEditText.getText().toString();
+		//String topicString = topicEditText.getText().toString();
+		//String messageString = messageEditText.getText().toString();
+		
+		DownloadJSONArrayTask JSONArrayTask = new DownloadJSONArrayTask();
+		JSONArrayTask.execute("http://192.168.0.183/cedarblue/wall_controller.php");
+		
+		
+		
 
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		/*List<NameValuePair> params = new ArrayList<NameValuePair>();
 		params.add(new BasicNameValuePair("topic", topicString));
 		params.add(new BasicNameValuePair("message", messageString));
 
@@ -123,8 +130,72 @@ import android.os.Build;
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		*/
 	}
+	
+	
+	public static class DownloadJSONArrayTask extends AsyncTask<String, Integer, JSONArray>{
+
+		@Override
+		protected JSONArray doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			String url = params[0];
+			
+			String topicString = topicEditText.getText().toString();
+			String messageString = messageEditText.getText().toString();
+			
+			List<NameValuePair> values = new ArrayList<NameValuePair>();
+			values.add(new BasicNameValuePair("topic", topicString));
+			values.add(new BasicNameValuePair("message", messageString));
+			
+			HttpClient httpclient = new DefaultHttpClient();
+			HttpPost httppost = new HttpPost(url);
+			//192.168.56.1
+			//192.168.0.183
+			JSONArray jArray = null;
+			try {
+				httppost.setEntity(new UrlEncodedFormEntity(values));
+				HttpResponse response = httpclient.execute(httppost);
+
+				HttpEntity entity = response.getEntity();
+				InputStream is = entity.getContent();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(is,"iso-8859-1"));
+				
+				StringBuilder sb = new StringBuilder();
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line + "\n");
+				}
+				is.close();
+				
+				String result = sb.toString();
+				jArray = new JSONArray(result);
+			} catch (Exception e) {
+				
+			}
+			
+			// This jArray goes to onPostExecute
+			return jArray;
+		}
+		
+		
+		protected void onPostExecute(JSONArray result) {
+	         //showDialog("Downloaded " + result + " bytes");
+			/*
+			 * This is where we should use the JSONArray to populate the text fields
+			 */
+	     }
+		
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
